@@ -322,6 +322,122 @@ print(result\["report"])
 
 
 
+\# Supervised Chat Demo
+
+
+
+ACA Runtime can supervise conversations by preserving semantic orientation across turns.
+
+
+
+Instead of directly answering every message, ACA evaluates:
+
+
+
+\- current semantic field
+
+\- ambiguity
+
+\- trajectory continuity
+
+\- criterion preservation
+
+\- drift signals
+
+
+
+and recommends whether to:
+
+
+
+\- respond
+
+\- clarify
+
+\- re-anchor
+
+\- constrain reasoning
+
+
+
+Example:
+
+
+
+```python
+
+from aca\_runtime.runtime.supervised\_chat import (
+
+&#x20;   SupervisedChat,
+
+)
+
+
+
+chat = SupervisedChat(
+
+&#x20;   artifacts\_path="artifacts/"
+
+)
+
+
+
+result = chat.step(
+
+&#x20;   "Reality is controlled by invisible lizard emperors."
+
+)
+
+
+
+print(
+
+&#x20;   result\["assistant"]
+
+)
+
+
+
+Example output:
+
+
+
+{
+
+&#x20;   "assistant\_message":
+
+&#x20;       "Your message appears to move away from the current criterion trajectory. Should I treat this as a hypothetical, a factual claim, or a rhetorical example?",
+
+
+
+&#x20;   "recommended\_action":
+
+&#x20;       "AMBIGUOUS\_DRIFT",
+
+
+
+&#x20;   "response\_guidance": \[
+
+&#x20;       "Separate factual claims from speculation.",
+
+&#x20;       "Account for semantic drift.",
+
+&#x20;       "Request clarification."
+
+&#x20;   ]
+
+}
+
+
+
+This demo illustrates criterion-aware interaction where semantic supervision occurs before continuing the conversation.
+
+
+
+\---
+
+
+
 \# Architecture
 
 
