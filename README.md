@@ -34,11 +34,11 @@ Where:
 
 
 
-\- v = embedding vector
+\* v = embedding vector
 
-\- S = semantic field subspace
+\* S = semantic field subspace
 
-\- P\_S(v) = projection onto the field
+\* P\_S(v) = projection onto the field
 
 
 
@@ -54,19 +54,19 @@ Lower origin cost indicates stronger semantic alignment.
 
 
 
-\- Semantic field selection
+\* Semantic field selection
 
-\- Origin cost evaluation
+\* Origin cost evaluation
 
-\- Ambiguity detection
+\* Ambiguity detection
 
-\- Drift supervision
+\* Drift supervision
 
-\- Runtime policy decisions
+\* Runtime policy decisions
 
-\- Criterion confidence estimation
+\* Criterion confidence estimation
 
-\- Persistent geometric artifacts
+\* Persistent geometric artifacts
 
 
 
@@ -78,21 +78,21 @@ Lower origin cost indicates stronger semantic alignment.
 
 
 
-| Policy | Meaning |
+| Policy            | Meaning                              |
 
-|---|---|
+| ----------------- | ------------------------------------ |
 
-| ALLOW | Stable semantic alignment |
+| ALLOW             | Stable semantic alignment            |
 
-| ALLOW\_LIGHT | Mild ambiguity |
+| ALLOW\_LIGHT       | Mild ambiguity                       |
 
-| CLARIFY | Clarification recommended |
+| CLARIFY           | Clarification recommended            |
 
-| AMBIGUOUS\_CLARIFY | Unstable semantic transition |
+| AMBIGUOUS\_CLARIFY | Unstable semantic transition         |
 
-| FLAG\_DRIFT | Semantic drift detected |
+| FLAG\_DRIFT        | Semantic drift detected              |
 
-| AMBIGUOUS\_DRIFT | High entropy / undefined orientation |
+| AMBIGUOUS\_DRIFT   | High entropy / undefined orientation |
 
 
 
@@ -108,15 +108,23 @@ Lower origin cost indicates stronger semantic alignment.
 
 pip install -r requirements.txt
 
+```
 
 
-Artifact Structure
+
+\---
+
+
+
+\# Artifact Structure
 
 
 
 ACA Runtime consumes persistent Atlas artifacts:
 
 
+
+```text
 
 artifacts/
 
@@ -132,7 +140,19 @@ artifacts/
 
 └── rhetorical/
 
-Example
+```
+
+
+
+\---
+
+
+
+\# Example
+
+
+
+```python
 
 from aca\_runtime.runtime import evaluate\_runtime
 
@@ -150,7 +170,19 @@ result = evaluate\_runtime(
 
 print(result\["report"])
 
-Example Output
+```
+
+
+
+\---
+
+
+
+\# Example Output
+
+
+
+```python
 
 {
 
@@ -174,7 +206,127 @@ Example Output
 
 }
 
-Architecture
+```
+
+
+
+\---
+
+
+
+\# Trajectory Runtime
+
+
+
+ACA Runtime can also evaluate semantic continuity across multiple turns.
+
+
+
+```python
+
+from aca\_runtime.runtime import evaluate\_runtime\_trajectory
+
+
+
+texts = \[
+
+&#x20;   "A conclusion should follow from available evidence.",
+
+&#x20;   "Claims must remain logically coherent.",
+
+&#x20;   "Interpretation should preserve semantic stability.",
+
+&#x20;   "Reality is controlled by invisible lizard emperors.",
+
+]
+
+
+
+result = evaluate\_runtime\_trajectory(
+
+&#x20;   texts=texts,
+
+&#x20;   artifacts\_path="artifacts/",
+
+)
+
+
+
+print(result\["report"])
+
+```
+
+
+
+\---
+
+
+
+\# Trajectory Example Output
+
+
+
+```python
+
+{
+
+&#x20;   "trajectory\_status": "drifting",
+
+&#x20;   "drift\_detected": True,
+
+&#x20;   "drift\_severity": "high",
+
+&#x20;   "field\_sequence": \[
+
+&#x20;       "foundational",
+
+&#x20;       "foundational",
+
+&#x20;       "foundational",
+
+&#x20;       "factual"
+
+&#x20;   ],
+
+&#x20;   "criterion\_preservation": 0.5906,
+
+&#x20;   "trajectory\_entropy": 0.0753,
+
+&#x20;   "drift\_event\_count": 1,
+
+&#x20;   "drift\_events": \[
+
+&#x20;       {
+
+&#x20;           "step": 3,
+
+&#x20;           "transition\_score": 0.6532,
+
+&#x20;           "field\_changed": True,
+
+&#x20;           "from\_field": "foundational",
+
+&#x20;           "to\_field": "factual"
+
+&#x20;       }
+
+&#x20;   ]
+
+}
+
+```
+
+
+
+\---
+
+
+
+\# Architecture
+
+
+
+```text
 
 Input Text
 
@@ -202,7 +354,15 @@ Criterion Supervision
 
 Runtime Decision
 
-Relationship to ACA Atlas
+```
+
+
+
+\---
+
+
+
+\# Relationship to ACA Atlas
 
 
 
@@ -213,6 +373,8 @@ ACA Atlas builds semantic geometric fields.
 ACA Runtime operationalizes those fields for runtime supervision.
 
 
+
+```text
 
 ACA Atlas
 
@@ -228,7 +390,15 @@ ACA Runtime
 
 Semantic Evaluation \& Drift Supervision
 
-Status
+```
+
+
+
+\---
+
+
+
+\# Status
 
 
 
@@ -236,15 +406,17 @@ Current Version:
 
 
 
-Runtime Evaluation: implemented
+\* Runtime Evaluation: implemented
 
-Artifact Loading: implemented
+\* Artifact Loading: implemented
 
-Ambiguity Detection: implemented
+\* Ambiguity Detection: implemented
 
-Drift Supervision: implemented
+\* Drift Supervision: implemented
 
-Text Evaluation: implemented
+\* Text Evaluation: implemented
+
+\* Trajectory Runtime: implemented
 
 
 
@@ -252,19 +424,25 @@ Planned:
 
 
 
-Trajectory supervision
+\* Streaming evaluation
 
-Streaming evaluation
+\* Gateway integration
 
-Gateway integration
+\* Real-time middleware APIs
 
-Real-time middleware APIs
+\* Multi-model runtime evaluation
 
-Multi-model runtime evaluation
 
-License
+
+\---
+
+
+
+\# License
 
 
 
 Apache 2.0
+
+
 
