@@ -1,0 +1,11 @@
+[project]
+name = "aca-runtime"
+version = "0.1.0"
+description = "ACA Runtime for geometry-based criterion supervision."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
