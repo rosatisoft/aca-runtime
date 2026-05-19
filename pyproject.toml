@@ -5,6 +5,8 @@ description = "ACA Runtime for geometry-based criterion supervision."
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
+    "openai",
+    "python-dotenv",
 ]
 
 [tool.pytest.ini_options]
