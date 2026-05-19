@@ -1,3 +1,6 @@
-from .api import evaluate_runtime
+from .api import evaluate_runtime, evaluate_runtime_trajectory
 
-__all__ = ["evaluate_runtime"]
+__all__ = [
+    "evaluate_runtime",
+    "evaluate_runtime_trajectory",
+]
