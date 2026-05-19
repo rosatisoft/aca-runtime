@@ -3,6 +3,7 @@ from .runtime_report import build_runtime_report
 from .text_evaluator import evaluate_text
 from .trajectory_report import build_trajectory_report
 from .trajectory_runtime import evaluate_trajectory
+from .criterion_preconditioning import build_criterion_route
 
 
 def evaluate_runtime(text: str, artifacts_path: str) -> dict:
@@ -32,4 +33,19 @@ def evaluate_runtime_trajectory(
     return {
         "report": report,
         "raw_result": result,
+    }
+
+def evaluate_criterion_route(
+    texts: list[str],
+    artifacts_path: str,
+    drift_threshold: float = 0.20,
+) -> dict:
+    route = build_criterion_route(
+        texts=texts,
+        artifacts_path=artifacts_path,
+        drift_threshold=drift_threshold,
+    )
+
+    return {
+        "report": route,
     }

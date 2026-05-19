@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from aca_runtime.runtime import (
     evaluate_runtime,
     evaluate_runtime_trajectory,
+    evaluate_criterion_route,
 )
 
 
@@ -22,6 +23,12 @@ class EvaluateRequest(BaseModel):
 
 
 class TrajectoryRequest(BaseModel):
+    texts: list[str]
+    artifacts_path: str | None = None
+    drift_threshold: float = 0.20
+
+
+class CriterionRouteRequest(BaseModel):
     texts: list[str]
     artifacts_path: str | None = None
     drift_threshold: float = 0.20
@@ -51,6 +58,17 @@ def trajectory(request: TrajectoryRequest):
     artifacts_path = request.artifacts_path or DEFAULT_ARTIFACTS_PATH
 
     return evaluate_runtime_trajectory(
+        texts=request.texts,
+        artifacts_path=artifacts_path,
+        drift_threshold=request.drift_threshold,
+    )
+
+
+@app.post("/criterion-route")
+def criterion_route(request: CriterionRouteRequest):
+    artifacts_path = request.artifacts_path or DEFAULT_ARTIFACTS_PATH
+
+    return evaluate_criterion_route(
         texts=request.texts,
         artifacts_path=artifacts_path,
         drift_threshold=request.drift_threshold,
