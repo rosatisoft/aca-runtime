@@ -73,12 +73,24 @@ with right:
     if st.session_state.events:
         latest = st.session_state.events[-1]
 
+        declared_shift = latest.get(
+            "declared_shift",
+            {}
+        )
+
         runtime = latest["runtime"]
         trajectory = latest["trajectory"]
         intervention = latest["intervention"]
 
         # Status banner
-        if trajectory["drift_detected"] or "DRIFT" in runtime["decision"]:
+        is_recovering = (
+            declared_shift.get("declared_shift")
+            and trajectory["drift_detected"]
+        )
+
+        if is_recovering:
+            st.warning("🟡 Recovering orientation")
+        elif trajectory["drift_detected"] or "DRIFT" in runtime["decision"]:
             st.error("🔴 Drift detected")
         elif runtime["ambiguity"] == "AMBIGUOUS" or "CLARIFY" in runtime["decision"]:
             st.warning("🟡 Ambiguous / clarification recommended")
@@ -86,16 +98,53 @@ with right:
             st.success("🟢 Stable orientation")
 
         st.subheader("Runtime")
-        st.metric("Decision", runtime["decision"])
+        decision = runtime["decision"]
+
+        if is_recovering:
+            decision = "RECOVERING"
+
+        st.metric(
+            "Decision",
+            decision
+        )
         st.metric("Semantic Field", runtime["semantic_field"])
         st.metric("Origin Cost", round(runtime["origin_cost"], 4))
         st.metric("Criterion Confidence", round(runtime["criterion_confidence"], 4))
 
         st.subheader("Trajectory")
-        st.metric("Status", trajectory["trajectory_status"])
+
+        trajectory_status = trajectory["trajectory_status"]
+
+        if is_recovering:
+            trajectory_status = "recovering"
+
+        st.metric("Status", trajectory_status)
         st.metric("Drift Detected", str(trajectory["drift_detected"]))
         st.metric("Preservation", round(trajectory["criterion_preservation"], 4))
         st.metric("Entropy", round(trajectory["trajectory_entropy"], 4))
+        st.subheader("Declared Shift")
+
+        st.metric(
+            "Detected",
+            str(
+                declared_shift.get(
+                    "declared_shift",
+                    False,
+                )
+            ),
+        )
+
+        if declared_shift.get("declared_shift"):
+
+            st.write(
+                "Type:",
+                declared_shift["shift_type"]
+            )
+
+            st.write(
+                "Evidence:",
+                declared_shift["evidence"]
+            )
 
         st.subheader("Criterion Preservation")
 
@@ -126,6 +175,78 @@ with right:
             st.warning(drift_events[-1])
         else:
             st.success("No drift events detected.")
+
+        st.subheader("Interpretation")
+
+        interpretation = []
+
+        if is_recovering:
+
+            interpretation.append(
+                "Conversation returned through an explicit criterion transition, "
+                "but recovery is not yet complete."
+            )
+
+        elif trajectory["drift_detected"]:
+
+            if declared_shift.get("declared_shift"):
+
+                interpretation.append(
+                    "Conversation changed orientation through a declared frame transition."
+                )
+
+            else:
+
+                interpretation.append(
+                    "Conversation moved away from the previous criterion without declaring a new frame."
+                )
+
+        elif runtime["ambiguity"] == "AMBIGUOUS":
+
+            interpretation.append(
+                "The current message can be interpreted under multiple nearby frames."
+            )
+
+        else:
+
+            interpretation.append(
+                "The conversation remains sufficiently aligned with the current criterion."
+            )
+
+        for item in interpretation:
+            st.info(item)
+
+        st.subheader("Operational Meaning")
+
+        meaning = []
+
+        if is_recovering:
+
+            meaning.append(
+                "A declared criterion recovery was detected. Continue operating under the "
+                "new frame and observe whether preservation stabilizes."
+            )
+
+        elif trajectory["drift_detected"]:
+
+            meaning.append(
+                "Consider clarifying whether a new criterion or frame was introduced."
+            )
+
+        if declared_shift.get("declared_shift") and not is_recovering:
+
+            meaning.append(
+                "Interpret the next messages using the newly declared frame."
+            )
+
+        if not meaning:
+
+            meaning.append(
+                "No criterion intervention recommended."
+            )
+
+        for item in meaning:
+            st.success(item)
 
         st.subheader("Intervention")
         st.write("Level:", intervention["level"])

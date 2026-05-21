@@ -48,6 +48,7 @@ def supervise_message(
         runtime_report=runtime["report"],
         trajectory_report=trajectory["report"],
         criterion_response=criterion_response,
+        declared_shift=declared_shift,
     )
 
     return {
@@ -67,9 +68,12 @@ def build_mode_intervention(
     runtime_report: dict,
     trajectory_report: dict,
     criterion_response: dict,
+    declared_shift: dict | None = None,
 ) -> dict:
     decision = runtime_report["decision"]
     drift_detected = trajectory_report["drift_detected"]
+    declared_shift = declared_shift or {}
+    is_declared_shift = declared_shift.get("declared_shift", False)
 
     if mode == "report":
         return {
@@ -80,6 +84,16 @@ def build_mode_intervention(
         }
 
     if mode == "warning":
+        if is_declared_shift:
+            return {
+                "should_intervene": True,
+                "level": "notice",
+                "message": (
+                    "Declared frame transition detected. "
+                    f"Using {declared_shift.get('shift_type')} framing."
+                ),
+                "action": "acknowledge_declared_transition",
+            }
         if drift_detected or "DRIFT" in decision or "CLARIFY" in decision:
             return {
                 "should_intervene": True,
@@ -96,6 +110,16 @@ def build_mode_intervention(
         }
 
     if mode == "interactive":
+        if is_declared_shift:
+            return {
+                "should_intervene": False,
+                "level": "declared_transition",
+                "message": (
+                    "Declared frame transition accepted. "
+                    f"Proceeding under {declared_shift.get('shift_type')} framing."
+                ),
+                "action": "allow_declared_transition",
+            }
         if "DRIFT" in decision or "CLARIFY" in decision:
             return {
                 "should_intervene": True,
@@ -112,6 +136,17 @@ def build_mode_intervention(
         }
 
     if mode == "moderator":
+        if is_declared_shift:
+            return {
+                "should_intervene": True,
+                "level": "moderator_note",
+                "message": (
+                    "Moderator note: a declared frame transition was detected. "
+                    f"The current contribution explicitly shifts toward the "
+                    f"{declared_shift.get('shift_type')} frame."
+                ),
+                "action": "acknowledge_declared_transition",
+            }
         if drift_detected or "DRIFT" in decision:
             return {
                 "should_intervene": True,
