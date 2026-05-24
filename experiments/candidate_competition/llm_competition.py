@@ -153,8 +153,8 @@ def main():
         )
 
         print(
-            "Foundation Preserved:",
-            item["foundation_preserved"],
+            "Orientation Diagnostic:",
+            "relative_signal_not_preservation",
         )
 
         print(

@@ -92,7 +92,8 @@ def main():
             user_message=message,
             system_message=
             build_minimal_prompt(
-                criterion
+                criterion,
+                objective=active_objective,
             ),
         )
 

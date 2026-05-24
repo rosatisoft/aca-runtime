@@ -166,6 +166,15 @@ def evaluate_candidate(
         "objective_orientation": objective_orientation,
         "foundation_delta": foundation_delta,
         "foundation_preserved": foundation_preserved,
+
+        "orientation_diagnostic": {
+            "candidate_orientation": candidate_orientation,
+            "objective_orientation": objective_orientation,
+            "foundation_delta": foundation_delta,
+            "interpretation": (
+                "diagnostic_only"
+            ),
+        },
      }
 
 
