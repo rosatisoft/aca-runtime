@@ -1,9 +1,9 @@
-from experiments.candidate_selection.scenario import (
+from experiments.candidate_competition.scenario import (
     USER_MESSAGE,
     OBJECTIVE,
 )
 
-from experiments.candidate_selection.candidate_generator import (
+from experiments.candidate_competition.candidate_generator import (
     generate_candidates,
 )
 
@@ -48,7 +48,7 @@ def main():
     )
 
     print(
-        "SELECTED"
+        "TOP RANKED CANDIDATE"
     )
 
     print(

@@ -4,7 +4,7 @@ from aca_runtime.runtime.geometric_selector import (
     select_best_candidate,
 )
 
-from experiments.candidate_selection.scenario import (
+from experiments.candidate_competition.scenario import (
     USER_MESSAGE,
     OBJECTIVE,
 )
@@ -46,7 +46,7 @@ def generate_llm_candidates(
 def main():
 
     print(
-        "\nACA Experiment 03 — LLM Candidate Selection\n"
+        "\nACA Experiment 03 — LLM Candidate Competition\n"
     )
 
     print(
@@ -76,7 +76,7 @@ def main():
         "\n=================="
     )
     print(
-        "SELECTED"
+        "TOP RANKED CANDIDATE"
     )
     print(
         "==================\n"

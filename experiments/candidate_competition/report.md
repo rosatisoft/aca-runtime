@@ -1,4 +1,4 @@
-\# Experiment 03 — Criterion-Conditioned Candidate Selection
+\# Experiment 03 — Criterion-Conditioned Candidate Competition
 
 
 
@@ -6,7 +6,7 @@
 
 
 
-Evaluate whether ACA can improve response selection without modifying LLM generation.
+Evaluate whether ACA can compare multiple candidate responses without modifying LLM generation.
 
 
 
@@ -18,7 +18,15 @@ ACA does not instruct the model.
 
 
 
-ACA evaluates candidate outputs geometrically and selects the response that best preserves the active criterion.
+ACA evaluates candidate outputs geometrically and reports their criterion signals.
+
+
+
+Candidate ranking is an application-level interpretation.
+
+
+
+ACA itself does not decide the final answer.
 
 
 
@@ -42,7 +50,11 @@ ACA Runtime Evaluation
 
 ↓
 
-Geometric Selector
+Geometric Competition Report
+
+↓
+
+Application Decision
 
 ↓
 
@@ -254,7 +266,7 @@ foundation\_delta >= tolerance
 
 
 
-ACA can improve output selection by evaluating generated candidates against both:
+ACA can improve output evaluation by evaluating generated candidates against both:
 
 
 
