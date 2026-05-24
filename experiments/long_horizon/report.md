@@ -120,9 +120,9 @@ Measured:
 
 \- origin cost
 
-\- criterion preservation
+\- trajectory continuity
 
-\- trajectory status
+\- orientation diagnostics
 
 \- declared shift
 
@@ -326,7 +326,7 @@ However:
 
 
 
-criterion preservation through prompt accumulation becomes expensive.
+objective continuity through textual persistence becomes expensive.
 
 
 
@@ -417,4 +417,16 @@ Future work should investigate:
 
 
 geometric objective persistence.
+
+
+
+Note:
+
+
+
+Current experiment preserves objective through text.
+
+
+
+Future work should investigate preserving objective through geometric state rather than prompt reconstruction.
 
