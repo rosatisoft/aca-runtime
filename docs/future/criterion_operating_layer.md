@@ -330,3 +330,85 @@ Future work may investigate:
 
 without requiring prompt-heavy reconstruction.
 
+
+
+\---
+
+
+
+\## Context Persistence
+
+
+
+
+
+Current ACA supervision reconstructs criterion from trajectory.
+
+
+
+Future operating layers should allow criterion persistence independently of current conversational state.
+
+
+
+
+
+Proposed formulation:
+
+
+
+
+
+O(z | C , G)
+
+
+
+
+
+Where:
+
+
+
+
+
+z = current state
+
+
+
+C = contextual trajectory
+
+
+
+G = persistent objective vector
+
+
+
+
+
+Interpretation:
+
+
+
+Conversation:
+
+G is implicit.
+
+
+
+Project:
+
+G is explicit.
+
+
+
+
+
+This enables long-horizon supervision while preserving criterion continuity.
+
+
+
+Open Question:
+
+
+
+When should criterion transitions replace the objective instead of recovering it?
+
