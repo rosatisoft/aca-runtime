@@ -6,14 +6,16 @@ from typing import Any, Dict, Optional
 from .generation_conditioning import build_supervised_prompt
 from .llm_providers.ollama_provider import OllamaProvider
 from .runtime_v2 import ACARuntimeV2
+from .post_generation_review import review_generated_output
 
-
+@dataclass
 @dataclass
 class SupervisedGenerationResult:
     runtime_result: Dict[str, Any]
     final_response: str
     llm_called: bool
     llm_response: Optional[Dict[str, Any]]
+    post_generation_review: Optional[Dict[str, Any]]
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -55,6 +57,7 @@ class ACASupervisedGenerator:
                 final_response=application_response["message"],
                 llm_called=False,
                 llm_response=None,
+                post_generation_review=None,
             )
 
         prompt = build_supervised_prompt(
@@ -77,11 +80,29 @@ class ACASupervisedGenerator:
             },
         )
 
+        generated_text = llm_response.response.strip()
+
+        review = review_generated_output(
+            user_input=text,
+            generated_output=generated_text,
+            runtime_result=runtime_result,
+        )
+
+        if review.should_release:
+            final_response = generated_text
+        else:
+            final_response = (
+                "The generated response shifted away from the accepted "
+                "semantic orientation and should be reviewed or reanchored "
+                "before release."
+            )
+
         return SupervisedGenerationResult(
             runtime_result=runtime_result,
-            final_response=llm_response.response.strip(),
+            final_response=final_response,
             llm_called=True,
             llm_response=llm_response.to_dict(),
+            post_generation_review=review.to_dict(),
         )
 
 
@@ -117,3 +138,19 @@ if __name__ == "__main__":
                 indent=2,
             )
         )
+
+        if result.post_generation_review:
+            print("\nPost-generation review:")
+            print(
+                json.dumps(
+                    {
+                        "state": result.post_generation_review["state"],
+                        "reason": result.post_generation_review["reason"],
+                        "input_summary": result.post_generation_review["input_summary"],
+                        "output_summary": result.post_generation_review["output_summary"],
+                        "flags": result.post_generation_review["flags"],
+                        "should_release": result.post_generation_review["should_release"],
+                    },
+                    indent=2,
+                )
+            )
