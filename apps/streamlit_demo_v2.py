@@ -2,6 +2,8 @@ import streamlit as st
 
 from aca_runtime.runtime.runtime_v2 import ACARuntimeV2
 
+from aca_runtime.runtime.supervised_generation import ACASupervisedGenerator
+from aca_runtime.runtime.llm_providers.ollama_provider import OllamaProvider
 
 st.set_page_config(
     page_title="ACA Runtime v2 — Deterministic Demo",
@@ -34,6 +36,9 @@ def reset_runtime() -> None:
     )
     st.session_state.events_v2 = []
 
+    if "supervised_generator_v2" in st.session_state:
+        del st.session_state.supervised_generator_v2
+
 
 def state_badge(state: str):
     if state in ["ACCEPT_AS_ORIGIN", "ACCEPT_AS_CONTINUATION"]:
@@ -51,11 +56,69 @@ if "events_v2" not in st.session_state:
 
 runtime = get_runtime()
 
+def get_generator(model: str) -> ACASupervisedGenerator:
+    if (
+        "supervised_generator_v2" not in st.session_state
+        or st.session_state.get("active_llm_model") != model
+    ):
+        runtime = get_runtime()
+        provider = OllamaProvider(model=model)
+
+        st.session_state.supervised_generator_v2 = ACASupervisedGenerator(
+            runtime=runtime,
+            llm_provider=provider,
+        )
+        st.session_state.active_llm_model = model
+
+    return st.session_state.supervised_generator_v2
+
+def process_input(text: str, mode: str, llm_model: str) -> dict:
+    runtime = get_runtime()
+
+    if mode == "supervised_llm":
+        generator = get_generator(llm_model)
+        result = generator.step(text).to_dict()
+
+        runtime_result = result["runtime_result"]
+        runtime_result["supervised_generation"] = {
+            "llm_called": result["llm_called"],
+            "final_response": result["final_response"],
+            "llm_response": result["llm_response"],
+        }
+
+        return runtime_result
+
+    result = runtime.step(text)
+    event = result.to_dict()
+    event["supervised_generation"] = {
+        "llm_called": False,
+        "final_response": event["application_response"]["message"],
+        "llm_response": None,
+    }
+
+    return event
+
 with st.sidebar:
     st.header("Runtime v2")
 
-    st.write("Mode:")
-    st.code("deterministic")
+    mode = st.selectbox(
+        "Mode",
+        [
+            "deterministic",
+            "supervised_llm",
+        ],
+        index=0,
+    )
+
+    llm_model = st.selectbox(
+        "LLM model",
+        [
+            "phi4-mini",
+            "phi4",
+            "phi4-mini-reasoning",
+        ],
+        index=0,
+    )
 
     st.write("Artifacts:")
     st.code(ARTIFACTS_PATH)
@@ -79,8 +142,8 @@ with st.sidebar:
 
     for sample in samples:
         if st.button(sample, key=f"sample_{sample}"):
-            result = runtime.step(sample)
-            st.session_state.events_v2.append(result.to_dict())
+            event = process_input(sample, mode, llm_model)
+            st.session_state.events_v2.append(event)
             st.rerun()
 
 
@@ -99,6 +162,9 @@ with left:
         app_message = app_response.get("message", "")
         should_call_llm = app_response.get("should_call_llm", False)
         boundary_applied = app_response.get("boundary_applied", False)
+        supervised = event.get("supervised_generation", {})
+        final_response = supervised.get("final_response", app_message)
+        llm_called = supervised.get("llm_called", False)
 
         if event["admitted"]:
             st.chat_message("assistant").write(
@@ -107,13 +173,14 @@ with left:
                 f"{reason}\n\n"
                 f"**Deterministic response:** {app_message}\n\n"
                 f"Should call LLM: `{should_call_llm}`"
+                f"LLM called: `{llm_called}`"
             )
         else:
             st.chat_message("assistant").write(
                 f"🛑 **Not admitted** — `{state}`\n\n"
                 f"Action: `{action}`\n\n"
                 f"{reason}\n\n"
-                f"**Deterministic response:** {app_message}\n\n"
+                f"**Final response:** {final_response}\n\n"
                 f"Boundary applied: `{boundary_applied}`\n\n"
                 "This input did not modify the accepted origin or trajectory."
             )
@@ -121,8 +188,8 @@ with left:
     user_input = st.chat_input("Write a message for ACA Runtime v2...")
 
     if user_input:
-        result = runtime.step(user_input)
-        st.session_state.events_v2.append(result.to_dict())
+        event = process_input(user_input, mode, llm_model)
+        st.session_state.events_v2.append(event)
         st.rerun()
 
 
@@ -185,6 +252,17 @@ with right:
             "Boundary applied:",
             latest["application_response"]["boundary_applied"],
         )
+        supervised = latest.get("supervised_generation", {})
+
+        st.subheader("Supervised Generation")
+        st.write("LLM called:", supervised.get("llm_called", False))
+
+        if supervised.get("final_response"):
+            st.info(supervised["final_response"])
+
+        if supervised.get("llm_response"):
+            with st.expander("LLM response metadata"):
+                st.json(supervised["llm_response"])
 
         st.subheader("State Mutation")
         st.write("Admitted:", latest["admitted"])
