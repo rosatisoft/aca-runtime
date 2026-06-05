@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, Optional
 
+from .application_response import build_application_response
+
 from .atlas_measurements import measure_text_with_atlas
 from .precondition_gate import (
     ACCEPT_AS_CONTINUATION,
@@ -21,6 +23,7 @@ class RuntimeV2Result:
     admitted: bool
     state_mutated: bool
     action: str
+    application_response: Dict[str, Any]
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -101,14 +104,27 @@ class ACARuntimeV2:
                 },
             )
 
+        result_payload = {
+            "input_text": text,
+            "precondition": precondition.to_dict(),
+            "measurements_summary": measurements["summary"],
+            "state_snapshot": self.state.snapshot(),
+            "admitted": admitted,
+            "state_mutated": state_mutated,
+            "action": self._application_action(precondition.state),
+        }
+
+        application_response = build_application_response(result_payload)
+
         return RuntimeV2Result(
-            input_text=text,
-            precondition=precondition.to_dict(),
-            measurements_summary=measurements["summary"],
-            state_snapshot=self.state.snapshot(),
-            admitted=admitted,
-            state_mutated=state_mutated,
-            action=self._application_action(precondition.state),
+            input_text=result_payload["input_text"],
+            precondition=result_payload["precondition"],
+            measurements_summary=result_payload["measurements_summary"],
+            state_snapshot=result_payload["state_snapshot"],
+            admitted=result_payload["admitted"],
+            state_mutated=result_payload["state_mutated"],
+            action=result_payload["action"],
+            application_response=application_response.to_dict(),
         )
 
     def _application_action(self, state: str) -> str:
