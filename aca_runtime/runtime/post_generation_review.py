@@ -127,6 +127,7 @@ def review_generated_output(
         )
 
     severe_flags = {
+        "research_to_manipulation_shift",
         "investigate_to_exploit_shift",
         "protect_to_exploit_shift",
         "output_manipulation_exploit",
