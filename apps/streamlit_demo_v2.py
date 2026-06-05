@@ -95,18 +95,26 @@ with left:
         state = event["precondition"]["state"]
         action = event["action"]
         reason = event["precondition"]["reason"]
+        app_response = event.get("application_response", {})
+        app_message = app_response.get("message", "")
+        should_call_llm = app_response.get("should_call_llm", False)
+        boundary_applied = app_response.get("boundary_applied", False)
 
         if event["admitted"]:
             st.chat_message("assistant").write(
                 f"✅ **Admitted** — `{state}`\n\n"
                 f"Action: `{action}`\n\n"
-                f"{reason}"
+                f"{reason}\n\n"
+                f"**Deterministic response:** {app_message}\n\n"
+                f"Should call LLM: `{should_call_llm}`"
             )
         else:
             st.chat_message("assistant").write(
                 f"🛑 **Not admitted** — `{state}`\n\n"
                 f"Action: `{action}`\n\n"
                 f"{reason}\n\n"
+                f"**Deterministic response:** {app_message}\n\n"
+                f"Boundary applied: `{boundary_applied}`\n\n"
                 "This input did not modify the accepted origin or trajectory."
             )
 
@@ -164,6 +172,19 @@ with right:
 
         st.subheader("Precondition Reason")
         st.info(latest["precondition"]["reason"])
+
+        st.subheader("Deterministic Application Response")
+        st.info(latest["application_response"]["message"])
+
+        st.write(
+            "Should call LLM:",
+            latest["application_response"]["should_call_llm"],
+        )
+
+        st.write(
+            "Boundary applied:",
+            latest["application_response"]["boundary_applied"],
+        )
 
         st.subheader("State Mutation")
         st.write("Admitted:", latest["admitted"])
