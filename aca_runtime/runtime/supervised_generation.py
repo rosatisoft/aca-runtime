@@ -9,7 +9,6 @@ from .runtime_v2 import ACARuntimeV2
 from .post_generation_review import review_generated_output
 
 @dataclass
-@dataclass
 class SupervisedGenerationResult:
     runtime_result: Dict[str, Any]
     final_response: str

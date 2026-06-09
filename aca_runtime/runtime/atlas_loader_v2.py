@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -8,7 +9,10 @@ import numpy as np
 
 
 DEFAULT_ARTIFACTS_ROOT = Path(
-    r"C:\Users\ernes\documents\ACA\artifacts"
+    os.environ.get(
+        "ACA_ARTIFACTS_PATH",
+        str(Path.cwd() / "artifacts"),
+    )
 )
 
 

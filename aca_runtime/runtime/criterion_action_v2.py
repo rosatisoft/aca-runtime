@@ -91,15 +91,3 @@ Meaning:
 Behavior:
 {criterion["behavior"]}
 """
-    return f"""
-{CRITERION_PREAMBLE}
-
-Criterion Signal:
-{criterion["mode"]}
-
-Meaning:
-{criterion["meaning"]}
-
-Behavior:
-{criterion["behavior"]}
-"""

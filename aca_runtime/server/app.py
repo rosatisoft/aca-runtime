@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -8,7 +11,10 @@ from aca_runtime.runtime import (
 )
 
 
-DEFAULT_ARTIFACTS_PATH = r"C:\Users\ernes\documents\aca\artifacts"
+DEFAULT_ARTIFACTS_PATH = os.environ.get(
+    "ACA_ARTIFACTS_PATH",
+    str(Path.cwd() / "artifacts"),
+)
 
 app = FastAPI(
     title="ACA Runtime Server",
