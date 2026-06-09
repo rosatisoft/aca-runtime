@@ -174,6 +174,37 @@ ACA Runtime expects ACA artifacts to be available locally. The artifact path may
 
 ---
 
+## Plug-and-Play Middleware Quickstart
+
+```powershell
+git clone https://github.com/rosatisoft/aca-runtime.git
+cd aca-runtime
+
+python -m pip install -e .
+
+$env:ACA_ARTIFACTS_PATH="C:\path\to\ACA\artifacts"
+
+python examples\quickstart_middleware_v0_1.py
+
+python -m uvicorn aca_runtime.server.app:app --reload
+```
+
+In another PowerShell window, test the API:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\examples\quickstart_api_test.ps1
+```
+
+Expected result:
+
+```text
+GET /health       -> ok
+POST /evaluate    -> ALLOW / CLARIFY / FLAG_DRIFT depending on input
+POST /trajectory  -> trajectory report with drift diagnostics
+```
+
+---
+
 ## Minimal Runtime Example
 
 ```python
