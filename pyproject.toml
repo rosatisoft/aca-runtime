@@ -12,3 +12,15 @@ dependencies = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["aca_runtime*"]
+exclude = [
+    "apps*",
+    "atlas*",
+    "docs*",
+    "examples*",
+    "experiments*",
+    "tests*",
+    "tools*"
+]
