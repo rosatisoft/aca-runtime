@@ -184,8 +184,8 @@ runtime = ACARuntimeV2(
 )
 
 result = runtime.step(
-    "Evaluate whether the evidence supports the claim.",
-    objective="Evaluate claims using evidence."
+    text="Evaluate whether the evidence supports the claim.",
+    objective="Analyze claims using only available evidence."
 )
 
 print(result.to_dict())
@@ -218,7 +218,7 @@ print(result.final_response)
 ## API Server
 
 ```bash
-uvicorn aca_runtime.server.app:app --reload
+python -m uvicorn aca_runtime.server.app:app --reload
 ```
 
 Endpoints:
