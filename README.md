@@ -13,13 +13,12 @@ Version-specific DOI:
 10.5281/zenodo.20621666
 ```
 
+```markdown
 Concept DOI for all versions:
 
 ```text
 10.5281/zenodo.20621665
 ```
-
----
 
 ---
 
