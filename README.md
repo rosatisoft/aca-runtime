@@ -1,4 +1,5 @@
 # ACA Runtime
+**Pre-Reasoning and Post-Generation Criterion Supervision for ACA v0.3 Artifacts**
 
 ## Citation
 
@@ -11,7 +12,7 @@ Version-specific DOI:
 ```text
 10.5281/zenodo.20621666
 
-**Pre-Reasoning and Post-Generation Criterion Supervision for ACA v0.3 Artifacts**
+---
 
 ACA Runtime operationalizes the Axiomatic Criterion Atlas (ACA) by loading persistent geometric artifacts and applying them as a runtime supervision layer for generative systems.
 
