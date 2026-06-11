@@ -1,0 +1,136 @@
+{
+  "name": "ACA Runtime Evaluate Gate v0.1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aca-runtime-evaluate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "aca-webhook",
+      "name": "Webhook - Incoming Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst text = body.text || body.message || body.input || body.prompt || '';\nif (!text) {\n  return [{ json: { error: true, message: 'Missing text/message/input/prompt field.', received: body } }];\n}\nreturn [{ json: { text, received: body } }];"
+      },
+      "id": "prepare-payload",
+      "name": "Prepare ACA Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/evaluate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
+        "options": {}
+      },
+      "id": "aca-evaluate",
+      "name": "ACA Runtime /evaluate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $json.report || {};\nconst raw = $json.raw_result || {};\nconst decision = report.decision || raw.policy || 'UNKNOWN';\nlet route = 'REVIEW';\nlet shouldContinue = false;\nlet message = 'ACA Runtime routed this input for review.';\nif (decision === 'ALLOW') {\n  route = 'ALLOW';\n  shouldContinue = true;\n  message = 'Input allowed by ACA Runtime.';\n} else if (decision === 'CLARIFY') {\n  route = 'CLARIFY';\n  message = 'Input requires clarification before continuing.';\n} else if (decision === 'FLAG_DRIFT' || decision === 'AMBIGUOUS_DRIFT') {\n  route = 'REVIEW';\n  message = 'Input may indicate drift or boundary pressure; review before continuing.';\n}\nreturn [{ json: { route, should_continue: shouldContinue, message, decision, runtime_status: report.runtime_status || null, semantic_field: report.semantic_field || raw.best_field || null, origin_cost: report.origin_cost ?? raw.origin_cost ?? null, ambiguity: report.ambiguity || raw.ambiguity_status || null, criterion_confidence: report.criterion_confidence ?? null, trajectory_state: report.trajectory_state || null, aca_response: $json } }];"
+      },
+      "id": "normalize-decision",
+      "name": "Normalize ACA Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: $json.route, decision: $json.decision, should_continue: $json.should_continue, message: $json.message, semantic_field: $json.semantic_field, origin_cost: $json.origin_cost, ambiguity: $json.ambiguity, criterion_confidence: $json.criterion_confidence, trajectory_state: $json.trajectory_state } }}",
+        "options": {}
+      },
+      "id": "respond-result",
+      "name": "Respond - ACA Decision",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Incoming Input": {
+      "main": [
+        [
+          {
+            "node": "Prepare ACA Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare ACA Payload": {
+      "main": [
+        [
+          {
+            "node": "ACA Runtime /evaluate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ACA Runtime /evaluate": {
+      "main": [
+        [
+          {
+            "node": "Normalize ACA Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize ACA Decision": {
+      "main": [
+        [
+          {
+            "node": "Respond - ACA Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aca-runtime-evaluate-gate-v0.1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "aca-runtime-evaluate-gate-v0.1",
+  "tags": []
+}
