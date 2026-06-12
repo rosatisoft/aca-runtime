@@ -3,7 +3,7 @@
 
 ## Citation
 
-ACA Runtime v0.2.1 â€” Criterion Engine Middleware Preview is archived on Zenodo:
+ACA Runtime v0.2.1 — Criterion Engine Middleware Preview is archived on Zenodo:
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20621666.svg)](https://doi.org/10.5281/zenodo.20621666)
 
@@ -374,4 +374,5 @@ These artifacts correspond to the ACA v0.3 public runtime test configuration. Th
 They are not universal or final. For research, production, or domain-specific work, users should review the ACA repository and generate derived fields, custom anchors, or specialized artifacts as needed.
 
 Feedback is welcome. If you test the runtime with these artifacts, please share results, failure cases, drift cases, or domain-specific needs so the artifacts and derived fields can be improved.
+
 
