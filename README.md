@@ -347,3 +347,32 @@ Next work:
 ## License
 
 Apache License 2.0.
+
+## ACA artifacts for quick testing
+
+ACA Runtime does not generate ACA artifacts by itself. It consumes ACA Atlas artifacts produced by the Axiomatic Criterion Atlas repository.
+
+For easier public testing, this repository includes a frozen ACA v0.3 runtime artifacts bundle:
+
+```text
+artifacts_bundles/aca_artifacts_v0.3_runtime_bundle.zip
+```
+
+To install the sample artifacts locally:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_sample_artifacts.ps1
+```
+
+Then validate:
+
+```powershell
+python -m aca_runtime.runtime.atlas_loader_v2
+```
+
+These artifacts correspond to the ACA v0.3 public runtime test configuration. They are provided for reproducible testing of the Runtime examples and demos.
+
+They are not universal or final. For research, production, or domain-specific work, users should review the ACA repository and generate derived fields, custom anchors, or specialized artifacts as needed.
+
+Feedback is welcome. If you test the runtime with these artifacts, please share results, failure cases, drift cases, or domain-specific needs so the artifacts and derived fields can be improved.
+
