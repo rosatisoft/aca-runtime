@@ -1,9 +1,9 @@
-# ACA Runtime
+﻿# ACA Runtime
 **Pre-Reasoning and Post-Generation Criterion Supervision for ACA v0.3 Artifacts**
 
 ## Citation
 
-ACA Runtime v0.2.1 — Criterion Engine Middleware Preview is archived on Zenodo:
+ACA Runtime v0.2.1 â€” Criterion Engine Middleware Preview is archived on Zenodo:
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20621666.svg)](https://doi.org/10.5281/zenodo.20621666)
 
@@ -13,7 +13,6 @@ Version-specific DOI:
 10.5281/zenodo.20621666
 ```
 
-```markdown
 Concept DOI for all versions:
 
 ```text
@@ -148,21 +147,21 @@ The Precondition Gate does not exercise full criterion. It protects the conditio
 
 ```text
 User input
-  ↓
+  â†“
 ACA Atlas pre-orientation measurement
-  ↓
+  â†“
 Precondition Gate
-  ↓
+  â†“
 Runtime State
-  ↓
+  â†“
 F-C-P / trajectory / invariant evaluation
-  ↓
+  â†“
 Generation conditioning
-  ↓
+  â†“
 LLM or generative model
-  ↓
+  â†“
 Post-generation review
-  ↓
+  â†“
 Application action
 ```
 
@@ -309,11 +308,11 @@ docs/runtime_v0.1_architecture.md
 
 ```text
 ACA v0.3
-  ↓
+  â†“
 Persistent geometric artifacts
-  ↓
+  â†“
 ACA Runtime v0.1
-  ↓
+  â†“
 Pre-reasoning and post-generation criterion supervision
 ```
 
