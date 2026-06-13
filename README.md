@@ -376,3 +376,20 @@ They are not universal or final. For research, production, or domain-specific wo
 Feedback is welcome. If you test the runtime with these artifacts, please share results, failure cases, drift cases, or domain-specific needs so the artifacts and derived fields can be improved.
 
 
+
+## Input Policy Overlay
+
+ACA Runtime includes an experimental Input Policy Overlay for interpreting Atlas measurements before an input is allowed to become semantic origin or enter the accepted trajectory.
+
+The overlay prevents two opposite errors: forcing low-signal inputs into semantic origin, and ignoring sensitive signals because they are short or ambiguous.
+
+Working principle:
+
+- Low signal does not create origin.
+- Sensitive signal does not pass unnoticed.
+- Defensive intent is guided safely.
+- Adversarial intent is bounded.
+
+A batch probe over 44 mixed inputs produced: DEFER_ORIGIN_LOW_SIGNAL: 14, ORIGIN_CANDIDATE: 13, BOUNDARY_SECRET_REQUEST: 8, BOUNDARY_MANIPULATION_REQUEST: 2, SAFE_CREDENTIAL_GUIDANCE: 2, ASK_CLARIFICATION_SENSITIVE: 1, MONITOR_OR_ASK_CLARIFICATION: 4.
+
+See docs/input_policy_overlay.md and tools/batch_low_signal_probe.py.

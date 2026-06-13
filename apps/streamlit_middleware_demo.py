@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import sys
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -31,6 +33,22 @@ SAMPLE_PROMPTS = [
     "Teach users not to share private keys and to verify through official channels.",
 ]
 
+TRACE_DIR = PROJECT_ROOT / "traces"
+TRACE_FILE = TRACE_DIR / "streamlit_middleware_events.jsonl"
+
+
+def append_trace_event(event: Dict[str, Any], middleware: ACAMiddleware) -> None:
+    TRACE_DIR.mkdir(parents=True, exist_ok=True)
+
+    record = {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "event": event,
+        "runtime_snapshot": middleware.snapshot(),
+        "runtime_state": middleware.runtime.to_dict(),
+    }
+
+    with TRACE_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
 
 def _safe_get(data: Optional[Dict[str, Any]], *path: str, default: Any = None) -> Any:
     current: Any = data or {}
@@ -222,6 +240,7 @@ with st.sidebar:
         if st.button(sample, key=f"sample_{sample}"):
             event = run_turn(middleware=middleware, text=sample, objective=objective, mode=mode)
             st.session_state.events.append(event)
+            append_trace_event(event, middleware)
             st.rerun()
 
 left, right = st.columns([2, 1])
@@ -263,6 +282,7 @@ with left:
     if user_input:
         event = run_turn(middleware=middleware, text=user_input, objective=objective, mode=mode)
         st.session_state.events.append(event)
+        append_trace_event(event, middleware)
         st.rerun()
 
 with right:

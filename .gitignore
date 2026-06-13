@@ -11,3 +11,8 @@ build/
 
 # Local ACA Atlas artifacts junction
 artifacts/
+
+# Local ACA Runtime traces
+traces/*.jsonl
+traces/*.csv
+traces/*.json
