@@ -1,4 +1,4 @@
-\# ACA Runtime Public Demo Walkthrough
+# ACA Runtime Public Demo Walkthrough
 
 
 
@@ -40,7 +40,7 @@ or mutate the accepted trajectory.
 
 
 
-\## 1. Start the demo
+## 1. Start the demo
 
 
 
@@ -50,7 +50,7 @@ From the repository root:
 
 ```powershell
 
-python -m streamlit run .\\apps\\streamlit\_middleware\_demo.py
+python -m streamlit run .\apps\streamlit_middleware_demo.py
 
 ```
 
@@ -68,7 +68,7 @@ http://localhost:8501
 
 
 
-\## 2. Recommended configuration
+## 2. Recommended configuration
 
 
 
@@ -78,7 +78,7 @@ Use:
 
 ```text
 
-Middleware mode: supervise\_only
+Middleware mode: supervise_only
 
 ```
 
@@ -112,11 +112,11 @@ Rejected: 0
 
 
 
-\## 3. Test sequence
+## 3. Test sequence
 
 
 
-\### Test 1 — Low-signal pass-through
+### Test 1 — Low-signal pass-through
 
 
 
@@ -138,7 +138,7 @@ Expected result:
 
 ```text
 
-Decision: DEFER\_ORIGIN\_LOW\_SIGNAL
+Decision: DEFER_ORIGIN_LOW_SIGNAL
 
 Display: Pass-through -- no state mutation
 
@@ -168,7 +168,7 @@ and does not become runtime origin.
 
 
 
-\### Test 2 — Credential boundary
+### Test 2 — Credential boundary
 
 
 
@@ -190,7 +190,7 @@ Expected result:
 
 ```text
 
-Decision: BOUNDARY\_SECRET\_REQUEST
+Decision: BOUNDARY_SECRET_REQUEST
 
 Display: Boundary -- credential request blocked
 
@@ -220,7 +220,7 @@ It does not contaminate semantic origin or accepted trajectory.
 
 
 
-\### Test 3 — Semantic origin candidate
+### Test 3 — Semantic origin candidate
 
 
 
@@ -242,9 +242,9 @@ Expected result:
 
 ```text
 
-Decision: ORIGIN\_CANDIDATE
+Decision: ORIGIN_CANDIDATE
 
-Action: CREATE\_ORIGIN
+Action: CREATE_ORIGIN
 
 Display: Admitted
 
@@ -272,7 +272,7 @@ Runtime state is allowed to mutate.
 
 
 
-\### Test 4 — Safe credential guidance
+### Test 4 — Safe credential guidance
 
 
 
@@ -294,7 +294,7 @@ Expected result:
 
 ```text
 
-Decision: SAFE\_CREDENTIAL\_GUIDANCE
+Decision: SAFE_CREDENTIAL_GUIDANCE
 
 Display: Safe guidance -- no state mutation
 
@@ -336,7 +336,7 @@ but the runtime trajectory is not mutated.
 
 
 
-\## 4. What the demo proves
+## 4. What the demo proves
 
 
 
@@ -346,11 +346,11 @@ The demo shows that ACA Runtime can enforce semantic admission before runtime mu
 
 ```text
 
-measure\_only preflight
+measure_only preflight
 
 interpret input policy
 
-mutate state only if state\_mutation\_allowed=True
+mutate state only if state_mutation_allowed=True
 
 ```
 
@@ -374,7 +374,7 @@ Semantic origin is created only when the signal is strong enough.
 
 
 
-\## 5. Reproducible validation
+## 5. Reproducible validation
 
 
 
@@ -384,7 +384,7 @@ The same behavior is validated by:
 
 ```powershell
 
-python .\\tools\\validate\_input\_policy\_enforcement.py
+python .\tools\validate_input_policy_enforcement.py
 
 ```
 
@@ -412,7 +412,7 @@ PASS: Semantic origin candidate mutates runtime state.
 
 
 
-\## 6. Architectural note
+## 6. Architectural note
 
 
 
@@ -426,7 +426,7 @@ The reusable enforcement helper is:
 
 ```text
 
-aca\_runtime/middleware\_policy.py
+aca_runtime/middleware_policy.py
 
 ```
 
@@ -438,13 +438,10 @@ The public demo and validation tool both use the same runtime function:
 
 ```text
 
-handle\_with\_input\_policy(...)
+handle_with_input_policy(...)
 
 ```
 
 
 
 This means the Input Policy Overlay is not only a UI behavior. It is now reusable middleware logic.
-
-
-
