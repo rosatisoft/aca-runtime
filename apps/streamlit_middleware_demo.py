@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import sys
@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from aca_runtime.middleware import ACAMiddleware
 from aca_runtime.runtime.llm_providers.ollama_provider import OllamaProvider
+from aca_runtime.runtime.input_policy import interpret_input_policy
 
 
 DEFAULT_ARTIFACTS_PATH = os.environ.get(
@@ -90,18 +91,33 @@ def reset_middleware() -> None:
 
 
 def response_badge(response: Dict[str, Any]) -> None:
+    action = response.get("action", "UNKNOWN")
     admitted = response.get("admitted", False)
     boundary = response.get("boundary_applied", False)
-    action = response.get("action", "UNKNOWN")
+    policy = response.get("input_policy") or {}
+    decision = policy.get("decision", action)
 
     if response.get("mode") == "measure_only":
-        st.info(f"📐 Measurement only — {action}")
+        st.info(f"Measurement only — {action}")
+    elif decision == "DEFER_ORIGIN_LOW_SIGNAL":
+        st.info("Pass-through — no state mutation")
+    elif decision == "SAFE_CREDENTIAL_GUIDANCE":
+        st.warning("Safe guidance — no state mutation")
+    elif decision == "BOUNDARY_SECRET_REQUEST":
+        st.error("Boundary — credential request blocked")
+    elif decision == "BOUNDARY_MANIPULATION_REQUEST":
+        st.error("Boundary — manipulation request blocked")
+    elif decision == "ASK_CLARIFICATION_SENSITIVE":
+        st.warning("Clarify sensitive request — no state mutation")
+    elif decision == "MONITOR_OR_ASK_CLARIFICATION":
+        st.warning("Monitor / clarify — no state mutation")
     elif admitted:
-        st.success(f"✅ Admitted — {action}")
+        st.success(f"Admitted — {action}")
     elif boundary:
-        st.error(f"🛑 Boundary / Reject — {action}")
+        st.error(f"Boundary — {action}")
     else:
-        st.warning(f"⚠️ Not admitted — {action}")
+        st.warning(f"Not semantically admitted — {action}")
+
 
 
 def show_fcp_summary(response: Dict[str, Any]) -> None:
@@ -128,6 +144,77 @@ def show_fcp_summary(response: Dict[str, Any]) -> None:
     m2.metric("C margin", summary.get("C_margin", "—"))
     m3.metric("P margin", summary.get("P_margin", "—"))
 
+
+
+def get_event_measurements_for_policy(event: Dict[str, Any]) -> Dict[str, Any]:
+    if event.get("measurements"):
+        return event["measurements"]
+
+    return _safe_get(
+        event,
+        "runtime_result",
+        "precondition",
+        "metadata",
+        "measurements",
+        default={},
+    )
+
+
+def attach_input_policy(event: Dict[str, Any]) -> Dict[str, Any]:
+    text = event.get("input_text") or event.get("text") or ""
+    measurements = get_event_measurements_for_policy(event)
+
+    if not text or not measurements:
+        return event
+
+    policy = interpret_input_policy(text=text, measurements=measurements)
+    event["input_policy"] = policy.to_dict()
+    return event
+
+
+def show_input_policy(event: Dict[str, Any]) -> None:
+    policy = event.get("input_policy")
+
+    if not policy:
+        measurements = get_event_measurements_for_policy(event)
+        text = event.get("input_text") or event.get("text") or ""
+        if text and measurements:
+            policy = interpret_input_policy(text=text, measurements=measurements).to_dict()
+            event["input_policy"] = policy
+
+    if not policy:
+        st.info("No Input Policy Overlay decision available for this turn.")
+        return
+
+    decision = policy.get("decision", "UNKNOWN")
+    reason = policy.get("reason", "")
+
+    if policy.get("boundary_applied"):
+        st.error(decision)
+    elif policy.get("origin_allowed") or policy.get("state_mutation_allowed"):
+        st.success(decision)
+    elif decision == "DEFER_ORIGIN_LOW_SIGNAL":
+        st.info(decision)
+    else:
+        st.warning(decision)
+
+    if reason:
+        st.caption(reason)
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Origin allowed", str(policy.get("origin_allowed", False)))
+    c2.metric("State mutation", str(policy.get("state_mutation_allowed", False)))
+    c3.metric("Boundary", str(policy.get("boundary_applied", False)))
+
+    metadata = policy.get("metadata", {})
+    if metadata:
+        with st.expander("Input Policy Metadata"):
+            st.json(metadata)
+
+    envelope = policy.get("response_envelope")
+    if envelope:
+        with st.expander("Safe Response Envelope"):
+            st.write(envelope)
 
 def show_runtime_snapshot(middleware: ACAMiddleware) -> None:
     snapshot = middleware.snapshot()
@@ -187,9 +274,68 @@ def show_trajectory_lists(middleware: ACAMiddleware) -> None:
 
 
 def run_turn(middleware: ACAMiddleware, text: str, objective: Optional[str], mode: str) -> Dict[str, Any]:
-    result = middleware.handle(text=text, objective=objective or None, mode=mode)
-    return result.to_dict()
+    """
+    Two-phase execution:
 
+    1. Measure first without mutating runtime state.
+    2. Interpret the Input Policy Overlay.
+    3. Only call the stateful middleware path if the policy allows mutation.
+
+    This prevents low-signal or sensitive inputs from becoming semantic origin
+    or entering the accepted trajectory.
+    """
+    preflight_result = middleware.handle(
+        text=text,
+        objective=objective or None,
+        mode="measure_only",
+    )
+    preflight_event = preflight_result.to_dict()
+
+    measurements = get_event_measurements_for_policy(preflight_event)
+    policy = interpret_input_policy(text=text, measurements=measurements)
+    policy_dict = policy.to_dict()
+    preflight_event["input_policy"] = policy_dict
+
+    if mode == "measure_only":
+        return preflight_event
+
+    state_mutation_allowed = bool(policy_dict.get("state_mutation_allowed", False))
+    boundary_applied = bool(policy_dict.get("boundary_applied", False))
+
+    if state_mutation_allowed and not boundary_applied:
+        result = middleware.handle(
+            text=text,
+            objective=objective or None,
+            mode=mode,
+        )
+        event = result.to_dict()
+        event["input_policy"] = policy_dict
+        return event
+
+    message = (
+        policy_dict.get("response_envelope")
+        or policy_dict.get("reason")
+        or "Input was not admitted by Input Policy Overlay."
+    )
+
+    preflight_event.update(
+        {
+            "mode": mode,
+            "admitted": False,
+            "action": policy_dict.get("decision", "INPUT_POLICY_NOT_ADMITTED"),
+            "boundary_applied": boundary_applied,
+            "should_call_llm": False,
+            "llm_called": False,
+            "final_response": message,
+            "application_response": {
+                "message": message,
+                "should_call_llm": False,
+                "boundary_applied": boundary_applied,
+            },
+        }
+    )
+
+    return preflight_event
 
 st.set_page_config(page_title="ACA Runtime Middleware Demo", layout="wide")
 
@@ -264,7 +410,7 @@ with left:
         llm_called = event.get("llm_called", False)
         boundary_applied = event.get("boundary_applied", False)
 
-        status = "✅ Admitted" if admitted else "🛑 Not admitted"
+        policy = event.get("input_policy") or {}; decision = policy.get("decision", action); status = "Admitted" if admitted else "Pass-through — no state mutation" if decision == "DEFER_ORIGIN_LOW_SIGNAL" else "Safe guidance — no state mutation" if decision == "SAFE_CREDENTIAL_GUIDANCE" else "Boundary" if boundary_applied else "Not semantically admitted"
         if mode_used == "measure_only":
             status = "📐 Measurement only"
 
@@ -294,6 +440,9 @@ with right:
         st.markdown("---")
         st.header("Latest Turn")
         response_badge(latest)
+
+        st.subheader("Input Policy Overlay")
+        show_input_policy(latest)
 
         st.subheader("F-C-P / T Orientation")
         show_fcp_summary(latest)
@@ -328,3 +477,5 @@ with right:
         show_trajectory_lists(middleware)
     else:
         st.info("Run a sample or type a message to see ACA middleware signals.")
+
+
