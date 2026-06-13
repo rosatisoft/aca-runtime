@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import sys
@@ -10,6 +10,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from aca_runtime.middleware import ACAMiddleware
 from aca_runtime.runtime.input_policy import interpret_input_policy
+from aca_runtime.middleware_policy import handle_with_input_policy
 
 
 ARTIFACTS_ROOT = os.environ.get(
@@ -51,40 +52,12 @@ def policy_enforced_turn(
     objective: Optional[str],
     mode: str = "supervise_only",
 ) -> Dict[str, Any]:
-    preflight = middleware.handle(
+    return handle_with_input_policy(
+        middleware=middleware,
         text=text,
         objective=objective,
-        mode="measure_only",
-    ).to_dict()
-
-    measurements = get_measurements(preflight)
-    policy = interpret_input_policy(text=text, measurements=measurements)
-    policy_dict = policy.to_dict()
-
-    preflight["input_policy"] = policy_dict
-
-    if policy.state_mutation_allowed and not policy.boundary_applied:
-        event = middleware.handle(
-            text=text,
-            objective=objective,
-            mode=mode,
-        ).to_dict()
-        event["input_policy"] = policy_dict
-        return event
-
-    preflight.update(
-        {
-            "mode": mode,
-            "admitted": False,
-            "action": policy.decision,
-            "boundary_applied": policy.boundary_applied,
-            "should_call_llm": False,
-            "llm_called": False,
-            "final_response": policy.response_envelope or policy.reason,
-        }
+        mode=mode,
     )
-
-    return preflight
 
 
 def assert_snapshot(

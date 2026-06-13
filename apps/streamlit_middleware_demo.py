@@ -16,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from aca_runtime.middleware import ACAMiddleware
 from aca_runtime.runtime.llm_providers.ollama_provider import OllamaProvider
 from aca_runtime.runtime.input_policy import interpret_input_policy
+from aca_runtime.middleware_policy import handle_with_input_policy
 
 
 DEFAULT_ARTIFACTS_PATH = os.environ.get(
@@ -274,68 +275,12 @@ def show_trajectory_lists(middleware: ACAMiddleware) -> None:
 
 
 def run_turn(middleware: ACAMiddleware, text: str, objective: Optional[str], mode: str) -> Dict[str, Any]:
-    """
-    Two-phase execution:
-
-    1. Measure first without mutating runtime state.
-    2. Interpret the Input Policy Overlay.
-    3. Only call the stateful middleware path if the policy allows mutation.
-
-    This prevents low-signal or sensitive inputs from becoming semantic origin
-    or entering the accepted trajectory.
-    """
-    preflight_result = middleware.handle(
+    return handle_with_input_policy(
+        middleware=middleware,
         text=text,
         objective=objective or None,
-        mode="measure_only",
+        mode=mode,
     )
-    preflight_event = preflight_result.to_dict()
-
-    measurements = get_event_measurements_for_policy(preflight_event)
-    policy = interpret_input_policy(text=text, measurements=measurements)
-    policy_dict = policy.to_dict()
-    preflight_event["input_policy"] = policy_dict
-
-    if mode == "measure_only":
-        return preflight_event
-
-    state_mutation_allowed = bool(policy_dict.get("state_mutation_allowed", False))
-    boundary_applied = bool(policy_dict.get("boundary_applied", False))
-
-    if state_mutation_allowed and not boundary_applied:
-        result = middleware.handle(
-            text=text,
-            objective=objective or None,
-            mode=mode,
-        )
-        event = result.to_dict()
-        event["input_policy"] = policy_dict
-        return event
-
-    message = (
-        policy_dict.get("response_envelope")
-        or policy_dict.get("reason")
-        or "Input was not admitted by Input Policy Overlay."
-    )
-
-    preflight_event.update(
-        {
-            "mode": mode,
-            "admitted": False,
-            "action": policy_dict.get("decision", "INPUT_POLICY_NOT_ADMITTED"),
-            "boundary_applied": boundary_applied,
-            "should_call_llm": False,
-            "llm_called": False,
-            "final_response": message,
-            "application_response": {
-                "message": message,
-                "should_call_llm": False,
-                "boundary_applied": boundary_applied,
-            },
-        }
-    )
-
-    return preflight_event
 
 st.set_page_config(page_title="ACA Runtime Middleware Demo", layout="wide")
 
@@ -477,5 +422,6 @@ with right:
         show_trajectory_lists(middleware)
     else:
         st.info("Run a sample or type a message to see ACA middleware signals.")
+
 
 
