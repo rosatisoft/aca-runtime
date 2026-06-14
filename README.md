@@ -147,21 +147,21 @@ The Precondition Gate does not exercise full criterion. It protects the conditio
 
 ```text
 User input
-  â†“
+  ->
 ACA Atlas pre-orientation measurement
-  â†“
+  ->
 Precondition Gate
-  â†“
+  ->
 Runtime State
-  â†“
+  ->
 F-C-P / trajectory / invariant evaluation
-  â†“
+  ->
 Generation conditioning
-  â†“
+  ->
 LLM or generative model
-  â†“
+  ->
 Post-generation review
-  â†“
+  ->
 Application action
 ```
 
@@ -178,8 +178,17 @@ aca_runtime/runtime/runtime_v2.py
 aca_runtime/runtime/generation_conditioning.py
 aca_runtime/runtime/supervised_generation.py
 aca_runtime/runtime/post_generation_review.py
+aca_runtime/runtime/input_policy.py
+aca_runtime/middleware_policy.py
 aca_runtime/server/app.py
 ```
+
+---
+
+## Documentation
+
+* [Direct Policy Evaluation API](docs/public_api_policy_evaluate.md): public FastAPI endpoint for pre-LLM Input Policy Overlay evaluation.
+* [Public Demo Walkthrough](docs/public_demo_walkthrough.md): browser-facing demo flow for validating Input Policy Overlay behavior.
 
 ---
 
@@ -278,6 +287,7 @@ GET  /health
 POST /evaluate
 POST /trajectory
 POST /criterion-route
+POST /policy-evaluate
 ```
 
 ---
@@ -308,11 +318,11 @@ docs/runtime_v0.1_architecture.md
 
 ```text
 ACA v0.3
-  â†“
+  ->
 Persistent geometric artifacts
-  â†“
+  ->
 ACA Runtime v0.1
-  â†“
+  ->
 Pre-reasoning and post-generation criterion supervision
 ```
 
