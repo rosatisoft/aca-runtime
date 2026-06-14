@@ -3,14 +3,14 @@
 
 ## Citation
 
-ACA Runtime v0.2.1 — Criterion Engine Middleware Preview is archived on Zenodo:
+ACA Runtime v0.2.2 — Input Policy Overlay Enforcement is archived on Zenodo:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20621666.svg)](https://doi.org/10.5281/zenodo.20621666)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20684736.svg)](https://doi.org/10.5281/zenodo.20684736)
 
 Version-specific DOI:
 
 ```text
-10.5281/zenodo.20621666
+10.5281/zenodo.20684736
 ```
 
 Concept DOI for all versions:
