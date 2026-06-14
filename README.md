@@ -393,3 +393,51 @@ Working principle:
 A batch probe over 44 mixed inputs produced: DEFER_ORIGIN_LOW_SIGNAL: 14, ORIGIN_CANDIDATE: 13, BOUNDARY_SECRET_REQUEST: 8, BOUNDARY_MANIPULATION_REQUEST: 2, SAFE_CREDENTIAL_GUIDANCE: 2, ASK_CLARIFICATION_SENSITIVE: 1, MONITOR_OR_ASK_CLARIFICATION: 4.
 
 See docs/input_policy_overlay.md and tools/batch_low_signal_probe.py.
+
+
+### Public Demo and Validation
+
+The Input Policy Overlay can be tested through both the Streamlit public demo and a reproducible validation tool.
+
+Run the public demo:
+
+```powershell
+python -m streamlit run .\apps\streamlit_middleware_demo.py
+```
+
+Recommended walkthrough:
+
+```text
+docs/public_demo_walkthrough.md
+```
+
+Run the validation tool:
+
+```powershell
+python .\tools\validate_input_policy_enforcement.py
+```
+
+Expected summary:
+
+```text
+Passed: 4/4
+
+PASS: Input Policy Overlay prevents invalid state mutation.
+PASS: Low-signal input passes without semantic admission.
+PASS: Sensitive input is bounded without contaminating trajectory.
+PASS: Semantic origin candidate mutates runtime state.
+```
+
+The reusable enforcement helper is:
+
+```text
+aca_runtime/middleware_policy.py
+```
+
+Both the public demo and the validation tool use:
+
+```text
+handle_with_input_policy(...)
+```
+
+This means the Input Policy Overlay is not only a Streamlit behavior. It is now reusable middleware logic.
