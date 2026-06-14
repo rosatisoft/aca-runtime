@@ -72,7 +72,14 @@ def classify_sensitive_intent(text: str) -> str:
         "clave privada",
         "private key",
         "api key",
+        "api keys",
         "secret key",
+        "access token",
+        "access tokens",
+        "verification code",
+        "verification codes",
+        "credential",
+        "credentials",
         "código de acceso",
         "codigo de acceso",
         "clave de acceso",
@@ -94,6 +101,13 @@ def classify_sensitive_intent(text: str) -> str:
         "give me",
         "show me",
         "tell me your",
+        "provide your",
+        "share your",
+        "need your",
+        "enter your",
+        "enter their",
+        "submit your",
+        "submit their",
     ]
 
     defensive_markers = [
@@ -115,7 +129,22 @@ def classify_sensitive_intent(text: str) -> str:
         "como se si",
         "reportar",
         "bloquear",
-        "phishing",
+        "how do i recover",
+        "how can i recover",
+        "recover my",
+        "reset my",
+        "reset password",
+        "reset my password",
+        "recover my password",
+        "what should i do",
+        "password was stolen",
+        "stolen",
+        "safely",
+        "protect my",
+        "secure my",
+        "phishing check",
+        "phishing report",
+        "suspicious",
         "sospechoso",
         "falso",
     ]
@@ -151,6 +180,16 @@ def classify_manipulation_intent(text: str) -> bool:
         "pretending to be",
         "impersonate",
         "make the message urgent",
+        "make the message more convincing",
+        "more convincing so they click",
+        "write a phishing message",
+        "phishing message",
+        "credential theft",
+        "credential theft script",
+        "bypass password",
+        "bypass password verification",
+        "pressures them to enter credentials",
+        "make users enter their password",
         "account suspension",
         "convince someone to",
         "urgente para que",
@@ -258,35 +297,58 @@ def interpret_input_policy(
 
     low_margins = bool(margins) and all(x < low_margin_threshold for x in margins)
     high_costs = bool(costs) and all(x > high_cost_threshold for x in costs)
-    low_signal = low_margins and high_costs
-
-    risk_signal = (
-        c == "manipulation"
-        and p == "exploit"
-        and (
-            (isinstance(c_margin, (int, float)) and c_margin >= risk_margin_threshold)
-            or (isinstance(p_margin, (int, float)) and p_margin >= risk_margin_threshold)
-        )
-    )
-
-    semantic_signal = (
-        not low_signal
-        and not risk_signal
-        and (
-            (isinstance(f_margin, (int, float)) and f_margin >= semantic_margin_threshold)
-            or (isinstance(c_margin, (int, float)) and c_margin >= semantic_margin_threshold)
-            or (isinstance(p_margin, (int, float)) and p_margin >= semantic_margin_threshold)
-        )
-    )
 
     sensitive_intent = classify_sensitive_intent(text)
     manipulation_intent = classify_manipulation_intent(text)
 
-    if risk_signal:
-        if sensitive_intent == "SENSITIVE_DIRECT_EXTRACTION":
-            decision = DECISION_BOUNDARY_SECRET_REQUEST
-            reason = "Atlas detected manipulation/exploit orientation and the input directly requests credentials or secrets."
-        elif sensitive_intent == "SENSITIVE_DEFENSIVE_HELP":
+    # Risk requires coherent manipulation + exploit orientation.
+    # A single weak manipulation margin should not turn neutral inputs like "ok"
+    # into sensitive clarification.
+    risk_signal = (
+        c == "manipulation"
+        and p == "exploit"
+        and isinstance(c_margin, (int, float))
+        and isinstance(p_margin, (int, float))
+        and c_margin >= risk_margin_threshold
+        and p_margin >= risk_margin_threshold
+    )
+
+    strong_semantic_margins = [
+        x for x in margins
+        if isinstance(x, (int, float)) and x >= semantic_margin_threshold
+    ]
+    semantic_margin_count = len(strong_semantic_margins)
+
+    # Origin admission should not be created by one isolated margin.
+    # It requires cross-axis support and no veto condition.
+    semantic_signal = (
+        semantic_margin_count >= 2
+        and not risk_signal
+        and sensitive_intent == "NOT_SENSITIVE"
+        and not manipulation_intent
+    )
+
+    # Low signal is an interpretation of weak Atlas fit, not a word list.
+    # High costs + no semantic/risk/sensitive/manipulation signal means:
+    # application may receive the input, but it should not become origin.
+    low_signal = (
+        high_costs
+        and not semantic_signal
+        and not risk_signal
+        and sensitive_intent == "NOT_SENSITIVE"
+        and not manipulation_intent
+    )
+
+    if sensitive_intent == "SENSITIVE_DIRECT_EXTRACTION":
+        decision = DECISION_BOUNDARY_SECRET_REQUEST
+        reason = "The input directly requests credentials, secrets, tokens, keys, access codes, or verification codes."
+
+    elif manipulation_intent and (risk_signal or sensitive_intent != "NOT_SENSITIVE"):
+        decision = DECISION_BOUNDARY_MANIPULATION_REQUEST
+        reason = "The input explicitly requests coercive, deceptive, credential-extractive, or bypass-oriented tactics."
+
+    elif risk_signal:
+        if sensitive_intent == "SENSITIVE_DEFENSIVE_HELP":
             decision = DECISION_SAFE_CREDENTIAL_GUIDANCE
             reason = "Atlas detected sensitive credential-related signal, but the declared intent is defensive or recovery-oriented."
         elif manipulation_intent:
@@ -299,13 +361,17 @@ def interpret_input_policy(
             decision = DECISION_ASK_CLARIFICATION_SENSITIVE
             reason = "Atlas detected manipulation/exploit orientation without enough safe intent clarity."
 
-    elif low_signal:
-        decision = DECISION_DEFER_ORIGIN_LOW_SIGNAL
-        reason = "Top costs are high and F/C/P margins are very low, so the input is insufficient to create semantic origin."
-
     elif sensitive_intent == "SENSITIVE_DEFENSIVE_HELP":
         decision = DECISION_SAFE_CREDENTIAL_GUIDANCE
         reason = "The input is credential-related but framed as defensive help or account recovery."
+
+    elif sensitive_intent == "SENSITIVE_AMBIGUOUS":
+        decision = DECISION_ASK_CLARIFICATION_SENSITIVE
+        reason = "Credential-related signal detected with ambiguous intent."
+
+    elif low_signal:
+        decision = DECISION_DEFER_ORIGIN_LOW_SIGNAL
+        reason = "Top costs are high and no coherent semantic, risk, or sensitive signal justifies origin admission."
 
     elif sensitive_intent == "DEFENSIVE_SECURITY_HELP":
         decision = DECISION_ORIGIN_CANDIDATE
@@ -313,7 +379,11 @@ def interpret_input_policy(
 
     elif semantic_signal:
         decision = DECISION_ORIGIN_CANDIDATE
-        reason = "At least one F/C/P margin is strong enough to treat the input as a semantic origin candidate."
+        reason = "Cross-axis F/C/P support is strong enough to treat the input as a semantic origin candidate."
+
+    elif manipulation_intent:
+        decision = DECISION_BOUNDARY_MANIPULATION_REQUEST
+        reason = "The input requests manipulative, coercive, exploitative, or deceptive tactics."
 
     else:
         decision = DECISION_MONITOR_OR_ASK_CLARIFICATION
@@ -331,6 +401,7 @@ def interpret_input_policy(
         "low_signal": low_signal,
         "risk_signal": risk_signal,
         "semantic_signal": semantic_signal,
+        "semantic_margin_count": semantic_margin_count,
         "sensitive_intent": sensitive_intent,
         "manipulation_intent": manipulation_intent,
         "low_margin_threshold": low_margin_threshold,

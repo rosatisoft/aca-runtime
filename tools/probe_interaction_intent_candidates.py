@@ -16,9 +16,13 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from aca_runtime.middleware import ACAMiddleware
 from aca_runtime.middleware_policy import (
@@ -27,7 +31,6 @@ from aca_runtime.middleware_policy import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "artifacts"
 RESULTS = ROOT / "results"
 RESULTS.mkdir(exist_ok=True)
