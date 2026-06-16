@@ -1,0 +1,121 @@
+{
+  "name": "ACA n8n Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aca-evaluate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        -128
+      ],
+      "id": "65e9bdfd-a02b-4c79-a940-bb3e09e927db",
+      "name": "Webhook",
+      "webhookId": "82f0db8c-54a6-42f7-88b4-92cf07cf3983"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/policy-evaluate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={\n  \"text\": \"={{ $json.body?.text || $json.query?.text || $json.text || 'hello' }}\",\n  \"objective\": \"={{ $json.body?.objective || 'Analyze claims using only available evidence.' }}\",\n  \"mode\": \"supervise_only\"\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -272,
+        -128
+      ],
+      "id": "5e0a7f74-b4e8-40b6-8e1c-176cbd277a08",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfunction classifyDecision(decision) {\n  switch (decision) {\n    case \"DEFER_ORIGIN_LOW_SIGNAL\":\n      return {\n        category: \"pass_through_no_origin\",\n        status: \"not_admitted\",\n        severity: \"low\",\n      };\n\n    case \"ORIGIN_CANDIDATE\":\n      return {\n        category: \"origin_candidate\",\n        status: \"admitted\",\n        severity: \"normal\",\n      };\n\n    case \"BOUNDARY_SECRET_REQUEST\":\n      return {\n        category: \"credential_boundary\",\n        status: \"blocked\",\n        severity: \"high\",\n      };\n\n    case \"BOUNDARY_MANIPULATION_REQUEST\":\n      return {\n        category: \"manipulation_boundary\",\n        status: \"blocked\",\n        severity: \"high\",\n      };\n\n    case \"SAFE_CREDENTIAL_GUIDANCE\":\n      return {\n        category: \"safe_credential_guidance\",\n        status: \"safe_guidance\",\n        severity: \"medium\",\n      };\n\n    case \"ASK_CLARIFICATION_SENSITIVE\":\n      return {\n        category: \"sensitive_clarification\",\n        status: \"clarify\",\n        severity: \"medium\",\n      };\n\n    case \"MONITOR_OR_ASK_CLARIFICATION\":\n      return {\n        category: \"monitor_or_clarify\",\n        status: \"monitor\",\n        severity: \"medium\",\n      };\n\n    default:\n      return {\n        category: \"unknown\",\n        status: \"review\",\n        severity: \"medium\",\n      };\n  }\n}\n\nreturn items.map((item) => {\n  const response = item.json || {};\n\n  const policy = response.input_policy || {};\n  const result = response.result || {};\n  const app = response.application_response || {};\n  const metadata = policy.metadata || {};\n\n  const decision = policy.decision || result.decision || \"UNKNOWN\";\n  const mapped = classifyDecision(decision);\n\n  return {\n    json: {\n      ok: true,\n      source: \"ACA Runtime /policy-evaluate\",\n      method: response.method || \"measure_only + Input Policy Overlay + ACA artifact projection\",\n      llm_generation_used: response.llm_generation_used === true,\n\n      decision,\n      category: mapped.category,\n      status: mapped.status,\n      severity: mapped.severity,\n\n      message: app.message || policy.reason || response.summary || \"\",\n      summary: response.summary || \"\",\n\n      should_call_llm: app.should_call_llm === true,\n      boundary_applied: policy.boundary_applied === true || app.boundary_applied === true,\n      origin_allowed: policy.origin_allowed === true,\n      state_mutation_allowed: policy.state_mutation_allowed === true,\n\n      semantic_field: result.semantic_field || metadata.F || null,\n      context_field: metadata.C || null,\n      principle_field: metadata.P || null,\n      transversal_field: metadata.T || null,\n\n      criterion_confidence: result.criterion_confidence ?? null,\n      trajectory_state: result.trajectory_state || null,\n      ambiguity: result.ambiguity || null,\n\n      metadata,\n      explanation: response.explanation || [],\n    },\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -128
+      ],
+      "id": "7d3cd075-bc82-4ae6-8358-27005f9cec3f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        160,
+        -128
+      ],
+      "id": "571ee844-59d0-451d-ba75-f824c6b59e54",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "83596b3f-a326-42f6-878a-3d59d2c6b322",
+  "meta": {
+    "instanceId": "053cdc69f3d179b4ef52a1c6cc7225229613b2530a277d0d4b1cf498a1859c29"
+  },
+  "nodeGroups": [],
+  "id": "AMqZVGB8OSBiiSuU",
+  "tags": []
+}
