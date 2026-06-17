@@ -1,0 +1,84 @@
+{
+  "name": "ACA n8n Demo v2 - Policy Evaluate Envelope",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aca-evaluate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -520,
+        -120
+      ],
+      "id": "aca-webhook-policy-evaluate-v2",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/policy-evaluate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.body?.text || $json.query?.text || $json.text || 'hello', objective: $json.body?.objective || $json.query?.objective || $json.objective || 'Analyze claims using only available evidence.', mode: $json.body?.mode || $json.query?.mode || $json.mode || 'supervise_only' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -260,
+        -120
+      ],
+      "id": "aca-http-policy-evaluate-v2",
+      "name": "ACA Runtime /policy-evaluate"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -120
+      ],
+      "id": "aca-respond-policy-evaluate-v2",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "ACA Runtime /policy-evaluate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ACA Runtime /policy-evaluate": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aca-policy-evaluate-envelope-v2"
+}
